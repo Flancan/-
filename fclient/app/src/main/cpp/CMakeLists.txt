@@ -50,16 +50,26 @@ add_definitions(-DSPDLOG_COMPILED_LIB)
 add_library(spdlog STATIC IMPORTED )
 
 set_target_properties(
-        spdlog PROPERTIES IMPORTED_LOCATION C:/Users/nlint/AndroidStudioProjects/libs/spdlog/spdlog/build/libspdlog.a
+        spdlog PROPERTIES IMPORTED_LOCATION C:/Users/missf/Desktop/PO_lab/libs/spdlog/build/armeabi-v7a/libspdlog.a
 )
 target_include_directories(
         native-lib PUBLIC
-        C:/Users/nlint/AndroidStudioProjects/libs/spdlog/spdlog/include
+        C:/Users/missf/Desktop/PO_lab/libs/spdlog/spdlog/include
+        C:/Users/missf/Desktop/PO_lab/libs/mbedtls/mbedtls/include
+)
+
+
+add_library(mbedcrypto SHARED IMPORTED
+        )
+
+set_target_properties(
+        mbedcrypto PROPERTIES IMPORTED_LOCATION C:/Users/missf/Desktop/PO_lab/libs/mbedtls/build/armeabi-v7a/library/libmbedcrypto.so
 )
 
 target_link_libraries( # Specifies the target library.
         native-lib
         spdlog
+        mbedcrypto
         # Links the target library to the log library
         # included in the NDK.
         )
