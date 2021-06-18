@@ -1,87 +1,71 @@
 package ru.iu3.rpo.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import javax.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.iu3.rpo.backend.models.Artist;
-import ru.iu3.rpo.backend.models.Country;
 import ru.iu3.rpo.backend.models.Painting;
-import ru.iu3.rpo.backend.models.Museum;
-import ru.iu3.rpo.backend.repositories.ArtistRepository;
-import ru.iu3.rpo.backend.repositories.CountryRepository;
-import ru.iu3.rpo.backend.repositories.MuseumRepository;
 import ru.iu3.rpo.backend.repositories.PaintingRepository;
+import ru.iu3.rpo.backend.tools.DataValidationException;
 
 import java.util.*;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/v1")
-
 public class PaintingController {
     @Autowired
-    ArtistRepository artistRepository;
-    @Autowired
-    MuseumRepository museumRepository;
-    @Autowired
     PaintingRepository paintingRepository;
+
     @GetMapping("/paintings")
-    public List<Painting> getAllPaintings() {
-        return paintingRepository.findAll();
+    public Page<Painting> getAllPaintings(@RequestParam("page") int page, @RequestParam("limit") int limit) {
+        return paintingRepository.findAll(PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC,"name")));
     }
 
-    @GetMapping("/artists/{id}/paintings")
-    public ResponseEntity<List<Painting>> getArtistPaintings(@PathVariable(value = "id") Long artistId) {
-        Optional<Artist> cc = artistRepository.findById(artistId);
-        if (cc.isPresent())
-        {
-            return ResponseEntity.ok(cc.get().paintings);
-        }
-        return ResponseEntity.ok(new ArrayList<Painting>());
-    }
-
-    @GetMapping("/museums/{id}/paintings")
-    public ResponseEntity<List<Painting>> getMuseumPaintings(@PathVariable(value = "id") Long museumId) {
-        Optional<Museum> cc = museumRepository.findById(museumId);
-        if (cc.isPresent())
-        {
-            return ResponseEntity.ok(cc.get().paintings);
-        }
-        return ResponseEntity.ok(new ArrayList<Painting>());
+    @GetMapping("/paintings/{id}")
+    public ResponseEntity<Painting> getPainting(@PathVariable(value = "id") Long paintingId)
+            throws DataValidationException
+    {
+        Painting painting = paintingRepository.findById(paintingId)
+                .orElseThrow(()-> new DataValidationException("Картина с таким индексом не найден"));
+        return ResponseEntity.ok(painting);
     }
 
     @PostMapping("/paintings")
-    public ResponseEntity<Object> createPainting(@Validated @RequestBody Painting painting) {
-        try {
-            Optional<Artist> cc = artistRepository.findById(painting.artist.id);
-            cc.ifPresent(artist -> painting.artist = artist);
-            Painting na = paintingRepository.save(painting);
-            return new ResponseEntity<Object>(na, HttpStatus.OK);
-        } catch (Exception ex) {
-            String error;
-            if (ex.getMessage().contains("paintings.name_UNIQUE"))
-                error = "painting already exists";
-            else
-                error = "undefined error";
-            Map<String, String> map = new HashMap<>();
-            map.put("error", error);
-            return new ResponseEntity<Object>(map, HttpStatus.OK);
-        }
+    public ResponseEntity<Object> createPainting(@Valid @RequestBody Painting painting) {
+        Painting nc = paintingRepository.save(painting);
+        return new ResponseEntity<Object>(nc, HttpStatus.OK);
     }
 
-    @DeleteMapping("/paintings/{id}")
-    public Map<String, Boolean> deletePainting(@PathVariable(value = "id") Long paintingId) {
-        Optional<Painting> painting = paintingRepository.findById(paintingId);
-        Map<String, Boolean> response = new HashMap<>();
-        if (painting.isPresent()) {
-            paintingRepository.delete(painting.get());
-            response.put("deleted", Boolean.TRUE);
+    @PutMapping("/paintings/{id}")
+    public ResponseEntity<Painting> updatePainting(@PathVariable(value = "id") Long paintingId,
+                                                   @Valid @RequestBody Painting paintingDetails) {
+        Painting painting = null;
+        Optional<Painting> cc = paintingRepository.findById(paintingId);
+        if (cc.isPresent())
+        {
+            painting = cc.get();
+            painting.name = paintingDetails.name;
+            paintingRepository.save(painting);
         }
-        else {
-            response.put("deleted", Boolean.FALSE);
+        else
+        {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "painting not found"
+            );
         }
-        return response;
+        return ResponseEntity.ok(painting);
+    }
+
+    @PostMapping("/deletepaintings")
+    public ResponseEntity deletePaintings(@Valid @RequestBody List<Painting> paintings){
+        paintingRepository.deleteAll(paintings);
+        return new ResponseEntity(HttpStatus.OK);
     }
 }

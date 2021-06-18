@@ -22,8 +22,8 @@ public class Artist {
     @Column(name = "name", nullable = false, unique = true)
     public String name;
 
-    @Column(name = "age", nullable = false)
-    public String age;
+    @Column(name = "century", nullable = false)
+    public String century;
 
     @ManyToOne
     @JoinColumn(name = "countryid")

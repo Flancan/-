@@ -7,16 +7,14 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Entity
-@Table(name = "users")
-@Access(AccessType.FIELD)
+
+@Entity // таблица в базе
+@Table(name = "users") //имя это таблицы users
+@Access(AccessType.FIELD) // разрешаем доступ к полям класса
 public class User {
 
-    public User() {}
-
-    public User(Long id) {
-        this.id = id;
-    }
+    public User() { }
+    public User(Long id) { this.id = id; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,8 +24,19 @@ public class User {
     @Column(name = "login", nullable = false, unique = true)
     public String login;
 
+    @JsonIgnore
+    @Column(name = "password")
+    public String password;
+
     @Column(name = "email", nullable = false, unique = true)
     public String email;
+
+    @JsonIgnore
+    @Column(name = "salt")
+    public String salt;
+
+    @Transient
+    public String np;
 
     @Column(name = "token")
     public String token;
@@ -37,15 +46,6 @@ public class User {
 
     @ManyToMany(mappedBy = "users")
     public Set<Museum> museums = new HashSet<>();
-
-    @JsonIgnore
-    @Column(name = "password")
-    public String password;
-
-
-    @JsonIgnore
-    @Column(name = "salt")
-    public String salt;
 
     public void addMuseum(Museum m) {
         this.museums.add(m);
